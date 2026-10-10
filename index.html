@@ -1,0 +1,126 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Deadline Buddy</title>
+<style>
+body {
+  font-family: Arial, sans-serif;
+  max-width: 600px;
+  margin: 40px auto;
+  padding: 20px;
+  background: #f3f4f6;
+  color: #222;
+}
+main {
+  background: white;
+  padding: 24px;
+  border-radius: 14px;
+}
+form { display: flex; gap: 8px; flex-wrap: wrap; }
+input, button {
+  padding: 11px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+#task { flex: 1; min-width: 130px; }
+button { cursor: pointer; }
+li {
+  margin: 12px 0;
+  padding: 12px;
+  background: #f3f4f6;
+  border-radius: 8px;
+  overflow-wrap: anywhere;
+}
+.done { text-decoration: line-through; opacity: .6; }
+small { display: block; margin-top: 6px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Deadline Buddy</h1>
+  <p>Organize tasks. Track deadlines. Get things done.</p>
+
+  <form id="form">
+    <input id="task" placeholder="What needs to be done?" required>
+    <input id="date" type="date" required>
+    <button>Add task</button>
+  </form>
+
+  <h3 id="summary">Your tasks</h3>
+  <ul id="list"></ul>
+</main>
+
+<script>
+const form = document.querySelector("#form");
+const taskInput = document.querySelector("#task");
+const dateInput = document.querySelector("#date");
+const list = document.querySelector("#list");
+const summary = document.querySelector("#summary");
+
+let tasks = [];
+try {
+  tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+  if (!Array.isArray(tasks)) tasks = [];
+} catch {
+  tasks = [];
+}
+
+function save() {
+  localStorage.setItem("tasks", JSON.stringify(tasks));
+}
+
+function render() {
+  list.replaceChildren();
+  const remaining = tasks.filter(t => !t.done).length;
+  summary.textContent = `Your tasks: ${remaining} remaining`;
+
+  tasks.forEach((task, index) => {
+    const li = document.createElement("li");
+    const name = document.createElement("span");
+    name.textContent = task.name;
+    if (task.done) name.className = "done";
+
+    const deadline = document.createElement("small");
+    deadline.textContent = `Deadline: ${task.date}`;
+
+    const complete = document.createElement("button");
+    complete.textContent = task.done ? "Undo" : "Complete";
+    complete.onclick = () => {
+      tasks[index].done = !tasks[index].done;
+      save();
+      render();
+    };
+
+    const remove = document.createElement("button");
+    remove.textContent = "Delete";
+    remove.style.marginLeft = "8px";
+    remove.onclick = () => {
+      tasks.splice(index, 1);
+      save();
+      render();
+    };
+
+    li.append(name, deadline, complete, remove);
+    list.append(li);
+  });
+}
+
+form.addEventListener("submit", event => {
+  event.preventDefault();
+  tasks.push({
+    name: taskInput.value.trim(),
+    date: dateInput.value,
+    done: false
+  });
+  save();
+  form.reset();
+  render();
+});
+
+render();
+</script>
+</body>
+</html>
